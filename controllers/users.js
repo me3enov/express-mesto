@@ -1,5 +1,7 @@
 const User = require('../models/user');
 
+const expression = /^(ftp|http|https):\/\/.*\.(?:png|jpg|bmp|gif|jpeg|tiff|WebP)/i;
+
 module.exports.getUsers = (req, res) => {
   User.find({})
     .then((users) => {
@@ -17,34 +19,33 @@ module.exports.getUsers = (req, res) => {
 module.exports.getCurrentUser = (req, res) => {
   const id = req.params.userId;
   User.findById(id)
-  .then((user) => {
-    if (user) {
-      return res.status(200).send({ data: user });
-    }
-    return res.status(404).send({ message: `User not found! Error: ${err.name}` });
-  })
-  .catch((err) => {
-    if (err.name === 'CastError') {
-      res
-        .status(404)
-        .send({ message: `User not found! Error: ${err.name}` });
-    }
-    else {
-      res
-        .status(500)
-        .send({ message: `Server error: ${err.name}` });
-    }
-  });
-}
+    .then((user) => {
+      if (user) {
+        return res.status(200).send({ data: user });
+      }
+      return res.status(404).send({ message: 'User not found!' });
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        res
+          .status(404)
+          .send({ message: `User not found! Error: ${err.name}` });
+      } else {
+        res
+          .status(500)
+          .send({ message: `Server error: ${err.name}` });
+      }
+    });
+};
 
 module.exports.createUser = (req, res) => {
   const { name, about, avatar } = req.body;
   User.create({ name, about, avatar })
     .then((user) => {
-      if (!reg.test(avatar)) {
+      if (!expression.test(avatar)) {
         res
           .status(400)
-          .send({ message: `Wrong data! Error: ${err.name}` });
+          .send({ message: 'Wrong data!' });
       } else {
         res
           .status(200)
@@ -52,17 +53,11 @@ module.exports.createUser = (req, res) => {
       }
     })
     .catch((err) => {
-      if (!reg.test(avatar)) {
-        res
-          .status(400)
-          .send({ message: `Wrong data! Error: ${err.name}` });
-      }
       if (err.name === 'ValidationError') {
         res
           .status(400)
           .send({ message: `Wrong data! Error: ${err.name}` });
-      }
-      else {
+      } else {
         res
           .status(500)
           .send({ message: `Server error: ${err.name}` });
@@ -82,7 +77,7 @@ module.exports.updateUser = (req, res) => {
       if (user) {
         return res.status(200).send({ data: user });
       }
-      return res.status(404).send({ message: `User not found! Error: ${err.name}` });
+      return res.status(404).send({ message: 'User not found!' });
     })
     .catch((err) => {
       res
@@ -104,7 +99,7 @@ module.exports.updateAvatar = (req, res) => {
       if (user) {
         return res.status(200).send({ data: user });
       }
-      return res.status(404).send({ message: `User not found! Error: ${err.name}` });
+      return res.status(404).send({ message: 'User not found!' });
     })
     .catch((err) => {
       res
