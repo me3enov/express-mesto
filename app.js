@@ -26,6 +26,18 @@ app.use((req, res, next) => {
 
 app.use('/', users);
 app.use('/', cards);
+app.use((err, req, res, next) => {
+  if (err.status !== '500') {
+    res.status(err.status).send(err.message);
+    return;
+  }
+  res.status(500).send({ message: `Server error: ${err.message}` });
+  next();
+});
+
+app.use((req, res) => {
+  res.status(404).send({ message: 'Page not found' });
+});
 
 app.listen(PORT, () => {
   console.log(`Listening ${PORT}`);

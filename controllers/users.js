@@ -1,25 +1,50 @@
 const User = require('../models/user');
+const NotFoundError = require('../errors/NotFoundError');
+const ValidationError = require('../errors/ValidationError');
 
-module.exports.getUsers = (req, res) => {
+const checkErrors = (error) => {
+  if (error.message === 'NullReturned' || error.name === 'CastError') {
+    throw new NotFoundError(error.message);
+  } else {
+    throw new ValidationError(error.message);
+  }
+}
+
+module.exports.getUsers = (req, res, next) => {
   User.find({})
-    .then((users) => res.status(200).res.send({ data: users }))
-    .catch((err) => res.status(500).send({ message: `Server error: ${err.message}` }));
+    .then((users) => {
+      res
+        .status(200)
+        .send({ data: users });
+    })
+    .catch(next);
 };
 
-module.exports.getCurrentUser = (req, res) => {
+module.exports.getCurrentUser = (req, res, next) => {
   User.findById(req.params._id)
-    .then((user) => res.status(200).res.send({ data: user }))
-    .catch((err) => res.status(500).send({ message: `Server error: ${err.message}` }));
-};
+  .then((user) => {
+    res
+      .status(200)
+      .send({ data: user });
+  })
+  .catch((error) => {
+    throw new NotFoundError(error.message);
+  })
+  .catch(next);
+}
 
-module.exports.createUser = (req, res) => {
+module.exports.createUser = (req, res, next) => {
   const { name, about, avatar } = req.body;
   User.create({ name, about, avatar })
-    .then((user) => res.status(200).res.send({ data: user }))
-    .catch((err) => res.status(500).send({ message: `Server error: ${err.message}` }));
+    .then((user) => {
+      res
+        .status(200)
+        .send({ data: user });
+    })
+    .catch(next);
 };
 
-module.exports.updateUser = (req, res) => {
+module.exports.updateUser = (req, res, next) => {
   const { name, about, avatar } = req.body;
   User.findByIdAndUpdate(req.user._id,
     { name, about, avatar },
@@ -27,11 +52,18 @@ module.exports.updateUser = (req, res) => {
       new: true,
       runValidators: true,
     })
-    .then((user) => res.status(200).res.send({ data: user }))
-    .catch((err) => res.status(500).send({ message: `Server error: ${err.message}` }));
+    .then((user) => {
+      res
+        .status(200)
+        .send({ data: user });
+    })
+    .catch((error) => {
+      checkErrors(error);
+    })
+    .catch(next);
 };
 
-module.exports.updateAvatar = (req, res) => {
+module.exports.updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
 
   User.findByIdAndUpdate(req.user._id,
@@ -40,6 +72,13 @@ module.exports.updateAvatar = (req, res) => {
       new: true,
       runValidators: true,
     })
-    .then((newAvatar) => res.status(200).res.send({ data: newAvatar }))
-    .catch((err) => res.status(500).send({ message: `Server error: ${err.message}` }));
+    .then((newAvatar) => {
+      res
+        .status(200)
+        .send({ data: newAvatar });
+    })
+    .catch((error) => {
+      checkErrors(error);
+    })
+    .catch(next);
 };
