@@ -1,8 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
 const users = require('./routes/users');
 const cards = require('./routes/cards');
-const bodyParser = require('body-parser');
 
 const { PORT = 3000 } = process.env;
 
@@ -31,6 +31,4 @@ app.use((req, res) => {
   res.status(404).send({ message: 'Page not found' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Listening ${PORT}`);
-});
+app.listen(PORT);
