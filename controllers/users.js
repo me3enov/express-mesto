@@ -28,7 +28,7 @@ module.exports.getCurrentUser = (req, res) => {
     .catch((err) => {
       if (err.name === 'CastError') {
         res
-          .status(404)
+          .status(400)
           .send({ message: `User not found! Error: ${err.name}` });
       } else {
         res
@@ -80,9 +80,15 @@ module.exports.updateUser = (req, res) => {
       return res.status(404).send({ message: 'User not found!' });
     })
     .catch((err) => {
-      res
-        .status(500)
-        .send({ message: `Server error: ${err.name}` });
+      if (err.name === 'ValidationError') {
+        res
+          .status(400)
+          .send({ message: `Wrong data! Error: ${err.name}` });
+      } else {
+        res
+          .status(500)
+          .send({ message: `Server error: ${err.name}` });
+      }
     });
 };
 
@@ -102,8 +108,14 @@ module.exports.updateAvatar = (req, res) => {
       return res.status(404).send({ message: 'User not found!' });
     })
     .catch((err) => {
-      res
-        .status(500)
-        .send({ message: `Server error: ${err.name}` });
+      if (err.name === 'ValidationError') {
+        res
+          .status(400)
+          .send({ message: `Wrong data! Error: ${err.name}` });
+      } else {
+        res
+          .status(500)
+          .send({ message: `Server error: ${err.name}` });
+      }
     });
 };
