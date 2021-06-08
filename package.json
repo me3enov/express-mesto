@@ -1,10 +1,10 @@
 {
   "name": "express-mesto",
   "version": "1.0.0",
-  "description": "`/routes` — папка с файлами роутера  \r `/controllers` — папка с файлами контроллеров пользователя и карточки   \r `/models` — папка с файлами описания схем пользователя и карточки",
+  "description": "express-mesto",
   "main": "index.js",
   "scripts": {
-    "lint": "npx eslint *.js routes/*.js controllers/*.js models/*.js ",
+    "lint": "npx eslint *.js routes/*.js controllers/*.js models/*.js errors/*.js middlewares/*.js",
     "start": "node app.js",
     "dev": "nodemon app.js"
   },
@@ -13,15 +13,19 @@
     "url": "git+https://github.com/me3enov/express-mesto.git"
   },
   "keywords": [],
-  "author": "Mezenov Artem",
+  "author": "Artem Mezenov",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/me3enov/express-mesto/issues"
   },
   "homepage": "https://github.com/me3enov/express-mesto#readme",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
+    "cookie-parser": "^1.4.5",
     "express": "^4.17.1",
+    "express-rate-limit": "^5.2.6",
+    "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.12.12",
     "validator": "^13.6.0"
   },
