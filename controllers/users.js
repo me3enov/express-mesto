@@ -1,4 +1,3 @@
-const validator = require('validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
@@ -38,23 +37,33 @@ module.exports.aboutUser = (req, res, next) => {
 };
 
 module.exports.createUser = (req, res, next) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    throw new BadRequestError('Email or password cannot be empty');
-  }
-  if (validator.isEmail(email) === false) {
-    throw new BadRequestError('Wrong email');
-  }
+  const {
+    name,
+    about,
+    avatar,
+    email,
+    password,
+  } = req.body;
   bcrypt
-    .hash(req.body.password, 10)
+    .hash(password, 10)
     .then((hash) => User.create({
-      email: req.body.email,
+      name,
+      about,
+      avatar,
+      email,
       password: hash,
     }))
     .catch((err) => {
       if (err.name === 'MongoError' || err.code === 11000) {
         throw new ConflictError({ message: 'Duplicate key error index' });
       } else next(err);
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError' || err.name === 'CastError') {
+        throw new BadRequestError({ message: 'Validation Error!' });
+      } else {
+        next(err);
+      }
     })
     .then((user) => {
       res.status(200).send({ user });
@@ -121,7 +130,7 @@ module.exports.login = (req, res, next) => {
         { expiresIn: '7d' },
       );
       res
-        .cookie('jsonwebtoken', token, {
+        .cookie('jwt', token, {
           maxAge: 3600000 * 24 * 7,
           httpOnly: true,
           sameSite: true,

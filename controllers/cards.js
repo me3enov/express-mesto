@@ -33,7 +33,7 @@ module.exports.deleteCard = (req, res, next) => {
   Card.findById(id)
     .orFail(new NotFoundError('Card not found!'))
     .then((card) => {
-      if (card.owner === userId) {
+      if (card.owner.toString() === userId) {
         return Card.findByIdAndRemove(id)
           .orFail(new NotFoundError('Card not found!'))
           .then((data) => {
@@ -41,7 +41,7 @@ module.exports.deleteCard = (req, res, next) => {
           })
           .catch((err) => {
             if (err.name === 'CastError') {
-              next(new NotFoundError('Card not found!'));
+              next(new BadRequestError('Card not found!'));
             } else {
               next(err);
             }
@@ -70,7 +70,7 @@ module.exports.likeCard = (req, res, next) => {
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new NotFoundError('Card not found!'));
+        next(new BadRequestError('Card not found!'));
       } else {
         next(err);
       }
@@ -87,7 +87,7 @@ module.exports.dislikeCard = (req, res, next) => {
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new NotFoundError('Card not found!'));
+        next(new BadRequestError('Card not found!'));
       } else {
         next(err);
       }
