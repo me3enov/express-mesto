@@ -1,12 +1,13 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
+const path = require('path');
 const bodyParser = require('body-parser');
 const rateLimit = require('express-rate-limit');
-const users = require('./routes/users');
-const cards = require('./routes/cards');
+const { celebrate, Joi } = require('celebrate');
+const { errors } = require('celebrate');
 const { login, createUser } = require('./controllers/users');
-const auth = require('./middlewares/auth');
+const router = require('./routes/index');
 const NotFoundError = require('./errors/NotFoundError.js');
 
 const { PORT = 3000 } = process.env;
@@ -32,10 +33,27 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
   useUnifiedTopology: true,
 });
 
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(router);
+
 app.post('/signin', login);
-app.post('/signup', createUser);
-app.use('/', auth, users);
-app.use('/', auth, cards);
+app.post(
+  '/signup',
+  celebrate({
+    body: Joi.object().keys({
+      email: Joi.string().required(),
+      password: Joi.string().required(),
+    }).unknown(true),
+  }),
+  createUser,
+);
+
+app.use(errors());
+
+app.get('*', () => {
+  throw new NotFoundError({ message: 'Page not found!' });
+});
 
 app.use((err, req, res, next) => {
   if (err.status) {
@@ -48,10 +66,6 @@ app.use((err, req, res, next) => {
     .status(500)
     .send({ message: `Server error: ${err.name}` });
   next();
-});
-
-app.use(() => {
-  throw new NotFoundError({ message: 'Page not found' });
 });
 
 app.listen(PORT);

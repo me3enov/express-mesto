@@ -1,3 +1,4 @@
+const validator = require('validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
@@ -10,9 +11,7 @@ const { NODE_ENV, JWT_SECRET } = process.env;
 module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((users) => {
-      res
-        .status(200)
-        .send({ data: users });
+      res.status(200).send(users);
     })
     .catch(next);
 };
@@ -20,28 +19,36 @@ module.exports.getUsers = (req, res, next) => {
 module.exports.getCurrentUser = (req, res, next) => {
   const id = req.params.userId;
   User.findById(id)
-    .orFail()
-    .catch(() => {
-      throw new NotFoundError({ message: 'User not found!' });
-    })
-    .then((user) => res.send({ data: user }))
+    .orFail(new NotFoundError('User not found!'))
+    .then((user) => res.status(200).send({ user }))
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequestError('Wrong ID'));
+      } else {
+        next(err);
+      }
+    });
+};
+
+module.exports.aboutUser = (req, res, next) => {
+  const id = req.user._id;
+  User.findById(id)
+    .then((user) => res.status(200).send({ user }))
     .catch(next);
 };
 
 module.exports.createUser = (req, res, next) => {
-  const {
-    name = 'Жак-Ив Кусто',
-    about = 'Исследователь',
-    avatar = 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
-    email,
-    password,
-  } = req.body;
-  bcrypt.hash(password, 10)
+  const { email, password } = req.body;
+  if (!email || !password) {
+    throw new BadRequestError('Email or password cannot be empty');
+  }
+  if (validator.isEmail(email) === false) {
+    throw new BadRequestError('Wrong email');
+  }
+  bcrypt
+    .hash(req.body.password, 10)
     .then((hash) => User.create({
-      name,
-      about,
-      avatar,
-      email,
+      email: req.body.email,
       password: hash,
     }))
     .catch((err) => {
@@ -49,59 +56,64 @@ module.exports.createUser = (req, res, next) => {
         throw new ConflictError({ message: 'Duplicate key error index' });
       } else next(err);
     })
-    .then((user) => res.status(201).send({
-      data: {
-        name: user.name,
-        about: user.about,
-        avatar,
-        email: user.email,
-      },
-    }))
+    .then((user) => {
+      res.status(200).send({ user });
+    })
     .catch(next);
 };
 
 module.exports.updateUser = (req, res, next) => {
+  const id = req.user._id;
   const { name, about } = req.body;
-  User.findByIdAndUpdate(req.user._id,
+  User.findByIdAndUpdate(
+    id,
     { name, about },
     {
       new: true,
       runValidators: true,
+    },
+  )
+    .then((user) => {
+      res.status(200).send({ data: user });
     })
     .catch((err) => {
-      if (err instanceof NotFoundError) {
-        throw err;
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Validation Error!'));
+      } else {
+        next(err);
       }
-      throw new BadRequestError({ message: `Wrong data!: ${err.name}` });
-    })
-    .then((user) => res.send({ data: user }))
-    .catch(next);
+    });
 };
 
 module.exports.updateAvatar = (req, res, next) => {
+  const id = req.user._id;
   const { avatar } = req.body;
-  User.findByIdAndUpdate(req.user._id,
+  User.findByIdAndUpdate(
+    id,
     { avatar },
     {
       new: true,
       runValidators: true,
+    },
+  )
+    .then((user) => {
+      res.status(200).send({ data: user });
     })
     .catch((err) => {
-      if (err instanceof NotFoundError) {
-        throw err;
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Validation Error!'));
+      } else {
+        next(err);
       }
-      throw new BadRequestError({ message: `Wrong data!: ${err.name}` });
-    })
-    .then((newAvatar) => res.send({ data: newAvatar }))
-    .catch(next);
+    });
 };
 
 module.exports.login = (req, res, next) => {
-  const {
-    email,
-    password,
-  } = req.body;
-  return User.findUserByCredentials(email, password)
+  const { email, password } = req.body;
+  if (!email || !password) {
+    throw new BadRequestError('Email or password cannot be empty');
+  }
+  User.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign(
         { _id: user._id },
